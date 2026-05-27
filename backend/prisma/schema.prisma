@@ -1,0 +1,290 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  portfolio         Portfolio?
+  clientProjects    Project[]            @relation("ClientProjects")
+  proposals         Proposal[]
+  hiresAsClient     Hire[]               @relation("ClientHires")
+  hiresAsFreelancer Hire[]               @relation("FreelancerHires")
+  milestones        Milestone[]
+  threadParticipants ThreadParticipant[]
+  messages          Message[]
+  paymentProfile    PaymentProfile?
+  communityPosts    CommunityPost[]
+  comments          Comment[]
+  freelancerProfile FreelancerProfile?
+  clientAnalytics   ClientAnalytics?
+  jobApplications       JobApplication[]
+  identityVerification  IdentityVerification?
+}
+
+model IdentityVerification {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  method          String    @default("aadhaar")
+  linkedInUrl     String?
+  idDocumentName  String?
+  idDocumentType  String?
+  idDocumentData  String?
+  aadhaarMasked   String?
+  aadhaarHash     String?
+  aadhaarVerified Boolean   @default(false)
+  aadhaarVerifiedAt DateTime?
+  otpHash         String?
+  otpExpiresAt    DateTime?
+  livenessPassed  Boolean   @default(false)
+  livenessScore   Float?
+  livenessSnapshot String?
+  profilePhotoData String?
+  profileName     String?
+  status          String    @default("pending")
+  trustScore      Int       @default(50)
+  aiAnalysis      String?
+  flags           String    @default("[]")
+  verifiedAt      DateTime?
+  adminNote       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Portfolio {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data      String
+  aiScore   Int?
+  updatedAt DateTime @updatedAt
+}
+
+model FreelancerProfile {
+  id         String  @id @default(cuid())
+  userId     String? @unique
+  user       User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name       String
+  title      String
+  rate       String
+  skills     String
+  completed  Int     @default(0)
+  rating     Float?
+  verified   Boolean @default(false)
+  trustScore Int     @default(50)
+  bio        String  @default("")
+  joined     String  @default("")
+  portfolio  Boolean @default(false)
+  suspicious Boolean @default(false)
+}
+
+model Project {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       User     @relation("ClientProjects", fields: [clientId], references: [id], onDelete: Cascade)
+  title        String
+  description  String   @default("")
+  budget       String
+  category     String
+  skills       String   @default("[]")
+  status       String   @default("open")
+  views        Int      @default(0)
+  postAiScore  Int?
+  postAiReview String?
+  postedAt     DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  proposals      Proposal[]
+  hires          Hire[]
+  milestones     Milestone[]
+  applications   JobApplication[]
+}
+
+model JobApplication {
+  id                  String    @id @default(cuid())
+  projectId           String
+  project             Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  freelancerId        String
+  freelancer          User      @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
+  status              String    @default("round_1")
+  currentRound        Int       @default(1)
+  quizQuestions       String?
+  quizAnswers         String?
+  quizScore           Float?
+  quizPassed          Boolean?
+  quizIntegrity       Float?
+  quizTabSwitches     Int       @default(0)
+  quizFocusLost       Int       @default(0)
+  quizStartedAt       DateTime?
+  quizCompletedAt     DateTime?
+  resumeText          String?
+  resumeFileName      String?
+  resumeFileType      String?
+  resumeExtractMethod String?
+  resumeScore         Int?
+  resumeAnalysis      String?
+  resumePassed        Boolean?
+  interviewTranscript String?
+  interviewScore      Int?
+  interviewPassed     Boolean?
+  overallScore        Int?
+  recommended         Boolean   @default(false)
+  clientReviewed      Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([projectId, freelancerId])
+}
+
+model Proposal {
+  id           String   @id @default(cuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  freelancerId String?
+  freelancer   User?    @relation(fields: [freelancerId], references: [id], onDelete: SetNull)
+  freelancerName String
+  title        String
+  bid          Int
+  timeline     String
+  coverLetter  String   @default("")
+  aiScore      Int?
+  status       String   @default("pending")
+  skills       String   @default("[]")
+  createdAt    DateTime @default(now())
+  statusUpdatedAt DateTime @default(now())
+}
+
+model Hire {
+  id           String  @id @default(cuid())
+  clientId     String
+  client       User    @relation("ClientHires", fields: [clientId], references: [id], onDelete: Cascade)
+  freelancerId String?
+  freelancer   User?   @relation("FreelancerHires", fields: [freelancerId], references: [id], onDelete: SetNull)
+  projectId    String
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name         String
+  milestone    String  @default("Phase 1")
+  progress     Int     @default(0)
+}
+
+model Milestone {
+  id        String  @id @default(cuid())
+  clientId  String
+  client    User    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectTitle String
+  amount    String
+  status    String  @default("pending")
+  due       String
+}
+
+model MessageThread {
+  id           String   @id @default(cuid())
+  lastMessage  String   @default("")
+  lastTime     String   @default("")
+  projectTitle String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  participants ThreadParticipant[]
+  messages     Message[]
+}
+
+model ThreadParticipant {
+  id       String @id @default(cuid())
+  threadId String
+  thread   MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unread   Int    @default(0)
+
+  @@unique([threadId, userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  threadId  String
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  senderId  String?
+  sender    User?    @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  senderName String
+  text      String
+  self      Boolean  @default(false)
+  time      String
+  isError   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model PaymentProfile {
+  id            String @id @default(cuid())
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalEarnings Float  @default(0)
+  pending       Float  @default(0)
+  available     Float  @default(0)
+  currency      String @default("INR")
+  methods       String @default("[]")
+  transactions  String @default("[]")
+  withdrawals   String @default("[]")
+}
+
+model CommunityPost {
+  id           String   @id @default(cuid())
+  authorId     String?
+  author       User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName   String
+  title        String
+  body         String
+  likes        Int      @default(0)
+  tags         String   @default("[]")
+  commentCount Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  comments Comment[]
+  likesRel PostLike[]
+}
+
+model PostLike {
+  id     String @id @default(cuid())
+  postId String
+  post   CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+
+  @@unique([postId, userId])
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName String
+  text      String
+  createdAt DateTime @default(now())
+}
+
+model ClientAnalytics {
+  id            String @id @default(cuid())
+  userId        String @unique
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  spend         Float  @default(0)
+  hires         Int    @default(0)
+  avgTime       String @default("3.2 days")
+  success       Int    @default(94)
+  escrowPending Float  @default(3500)
+  spendHistory  String @default("[3200,4100,2800,5200,3800,6100,4800]")
+}

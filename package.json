@@ -1,0 +1,9 @@
+{
+  "name": "talentstage",
+  "private": true,
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix backend",
+    "setup:backend": "npm install --prefix backend && npm run db:setup --prefix backend"
+  }
+}
