@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "prisma generate",
+    "build": "prisma generate",
     "dev": "prisma generate && node --watch src/index.js",
-    "start": "prisma generate && node src/index.js",
+    "start": "node src/index.js",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
